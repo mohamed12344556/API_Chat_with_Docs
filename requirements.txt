@@ -1,4 +1,9 @@
 python-dotenv
+six
+matplotlib
+sympy
+fastapi[all]
+uvicorn[standard]
 langchain
 langchain_openai
 openai
