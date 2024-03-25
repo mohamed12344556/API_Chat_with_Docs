@@ -26,7 +26,7 @@ async def root():
 
 
 @app.post("/chatpdf/")
-async def chat(file: UploadFile = File(...), user_question: str = None):
+async def chatpdf(file: UploadFile = File(...), user_question: str = None):
     # Check if file exists
     if not file:
         raise HTTPException(status_code=400, detail="No file uploaded")
