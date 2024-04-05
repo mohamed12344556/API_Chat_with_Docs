@@ -1,7 +1,7 @@
 import os
 import lancedb
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import LanceDB,faiss
+from langchain_community.vectorstores import LanceDB
 from langchain_community.document_loaders import (
     WebBaseLoader,
     PyPDFLoader,
