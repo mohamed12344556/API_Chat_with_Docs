@@ -1,4 +1,4 @@
-from fastapi import FastAPI, File, UploadFile
+from fastapi import FastAPI, File, UploadFile,request, jsonify
 import uvicorn
 from io import BytesIO
 from typing import Optional
@@ -70,11 +70,12 @@ async def chaturl(user_question: str = None, url: str = None):
         # Process text chunks and conversation chain
         text_chunks = get_text_chunks(raw_text)
         retriever = initialize_vector_database(text_chunks)
-        rag_chain = generate_rag_chain(retriever,user_question)
+        rag_chain = generate_rag_chain(retriever, user_question)
         response = rag_chain.invoke(user_question)
-        complete_sentence=get_complete_sentence(response)
+        complete_sentence = get_complete_sentence(response)
 
         return complete_sentence
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+

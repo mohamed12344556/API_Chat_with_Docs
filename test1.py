@@ -1,19 +1,21 @@
 import os
-import time
 import lancedb
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.vectorstores import LanceDB
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+from langchain_community.vectorstores import LanceDB,faiss
 from langchain_community.document_loaders import (
     WebBaseLoader,
     PyPDFLoader,
     DirectoryLoader,
 )
+from PyPDF2 import PdfReader
 from langchain.memory import ConversationBufferMemory
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
 from dotenv import load_dotenv
+import google.generativeai as genai
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 load_dotenv()
 
@@ -46,18 +48,21 @@ def get_text_from_url(url):
 
     loader = WebBaseLoader(url)
     url_docs = loader.load()
-    data_docs= []
-    return url_docs+data_docs
+    data_docs = []
+    return url_docs + data_docs
+
 
 def get_text_from_pdf(documents_loader):
-    documents_loader = PyPDFLoader(documents_loader,extract_images=True)
-    data_docs = documents_loader.load()
-    data_url= []
-    return data_docs+data_url
-
+    data_docs = ""
+    for pdf in documents_loader:
+        pdf_reader = PdfReader(pdf)
+        for page in pdf_reader.pages:
+            data_docs += page.extract_text()
+        data_url = []
+    return data_docs + data_url
 
 def get_text_chunks(docs):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=256, chunk_overlap=20)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=10000, chunk_overlap=1000)
     chunks = text_splitter.split_documents(docs)
     return chunks
 
@@ -68,7 +73,7 @@ def initialize_vector_database(chunks):
         "rag_sample",
         data=[
             {
-                "vector": OpenAIEmbeddings(model="text-embedding-3-large").embed_query(
+                "vector": GoogleGenerativeAIEmbeddings(model="models/embedding-001").embed_query(
                     "Hello World"
                 ),
                 "text": "Hello World",
@@ -78,7 +83,9 @@ def initialize_vector_database(chunks):
         mode="overwrite",
     )
     docsearch = LanceDB.from_documents(
-        chunks, OpenAIEmbeddings(model="text-embedding-3-large"), connection=table
+        chunks,
+        GoogleGenerativeAIEmbeddings(model="models/embedding-001"),
+        connection=table,
     )
     return docsearch.as_retriever(search_kwargs={"k": 3})
 
@@ -89,7 +96,7 @@ def generate_rag_chain(retriever, user_question):
     rag_chain = (
         {"context": retriever, "query": RunnablePassthrough()}
         | prompt
-        | ChatOpenAI(model="gpt-3.5-turbo-0125")
+        | ChatGoogleGenerativeAI(model="gemini-pro")
         | StrOutputParser()
     )
     return rag_chain
@@ -110,7 +117,7 @@ def get_user_question():
 def prompt_link_or_data():
     while True:
         choice = (
-            input("Would you like to enter a link or use existing data? (link/data): ")
+            input("Would you like to enter a link or use existing data? (link / data): ")
             .strip()
             .lower()
         )
