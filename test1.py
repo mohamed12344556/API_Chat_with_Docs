@@ -43,6 +43,17 @@ def load_documents():
 
     return url_docs + data_docs
 
+def get_text_from_pdf(documents_loader):
+    documents_loader = DirectoryLoader("data", glob="./*.pdf", loader_cls=PyPDFLoader)
+    documents_docs = documents_loader.load()
+    data_docs = []
+    return documents_docs + data_docs
+
+def get_text_from_pdf(documents_loader):
+    documents_loader = DirectoryLoader("data", glob="./*.pdf", loader_cls=PyPDFLoader)
+    documents_docs = documents_loader.load()
+    data_docs = []
+    return documents_docs + data_docs
 
 def get_text_from_url(url):
 
@@ -52,14 +63,14 @@ def get_text_from_url(url):
     return url_docs + data_docs
 
 
-def get_text_from_pdf(documents_loader):
-    data_docs = ""
-    for pdf in documents_loader:
-        pdf_reader = PdfReader(pdf)
-        for page in pdf_reader.pages:
-            data_docs += page.extract_text()
-        data_url = []
-    return data_docs + data_url
+# def get_text_from_pdf(documents_loader):
+#     data_docs = ""
+#     for pdf in documents_loader:
+#         pdf_reader = PdfReader(pdf)
+#         for page in pdf_reader.pages:
+#             data_docs += page.extract_text()
+#         data_url = []
+#     return data_docs + data_url
 
 def get_text_chunks(docs):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=10000, chunk_overlap=1000)
