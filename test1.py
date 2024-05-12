@@ -168,8 +168,8 @@ def main():
     print(complete_sentence)
 
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
 
 # def chatpdf(user_question,url):

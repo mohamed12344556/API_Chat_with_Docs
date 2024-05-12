@@ -1,26 +1,25 @@
-python-dotenv
-six
-matplotlib
-sympy
-fastapi[all]
-uvicorn[standard]
-langchain
-langchain-community
-openpyxl
-langchain_experimental
-langchain-community
-tiktoken
-faiss-cpu
-chromadb
-PyPDF2
-docx2txt
-sentence-transformers
-InstructorEmbedding
-beautifulsoup4
-lancedb
-prettytable
-pypdf
-rapidocr-onnxruntime
-google-generativeai
-langchain_google_genai
-python-multipart
+python-dotenv == 1.0.1
+six == 1.16.0
+matplotlib == 3.8.4
+sympy == 1.12
+fastapi[all] == 0.110.1
+uvicorn[standard] == 0.29.0
+langchain == 0.1.16
+langchain-community == 0.0.33
+openpyxl == 3.1.2
+langchain_experimental == 0.0.57
+tiktoken == 0.6.0
+faiss-cpu == 1.8.0
+chromadb == 0.4.24
+PyPDF2 == 3.0.1
+docx2txt == 0.8
+sentence-transformers == 2.7.0
+InstructorEmbedding == 1.0.1
+beautifulsoup4 == 4.12.3
+lancedb == 0.6.8
+prettytable == 3.10.0
+pypdf == 4.2.0
+rapidocr-onnxruntime == 1.2.3
+google-generativeai == 0.5.1
+langchain_google_genai == 1.0.2
+python-multipart == 0.0.9
