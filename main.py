@@ -89,7 +89,7 @@ async def process_user_question(user_question: UserQuestion):
     # Get complete sentence
     complete_sentence = get_complete_sentence(response)
 
-    return {"response": complete_sentence}
+    return complete_sentence
 
 
 @app.post("/chaturl/")
@@ -113,11 +113,12 @@ async def chaturl(user_question: UserQuestion, url: str = None):
 
         # Invoke RAG chain
         response = rag_chain.invoke(user_question.question)
-        
+
         # Get complete sentence
         complete_sentence = get_complete_sentence(response)
 
-        return {"response": complete_sentence}
+        return complete_sentence
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
