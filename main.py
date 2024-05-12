@@ -89,7 +89,7 @@ async def process_user_question(user_question: UserQuestion):
     # Get complete sentence
     complete_sentence = get_complete_sentence(response)
 
-    return complete_sentence
+    return {"response": complete_sentence}
 
 
 @app.post("/chaturl/")
@@ -117,7 +117,7 @@ async def chaturl(user_question: UserQuestion, url: str = None):
         # Get complete sentence
         complete_sentence = get_complete_sentence(response)
 
-        return complete_sentence
+        return {"response": complete_sentence}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
