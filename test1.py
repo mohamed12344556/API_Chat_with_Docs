@@ -73,7 +73,7 @@ def get_text_from_url(url):
 #     return data_docs + data_url
 
 def get_text_chunks(docs):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=10000, chunk_overlap=1000)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000000, chunk_overlap=10000)
     chunks = text_splitter.split_documents(docs)
     return chunks
 
