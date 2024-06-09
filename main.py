@@ -65,10 +65,7 @@ async def process_user_question(user_question: UserQuestion):
         complete_sentence = get_complete_sentence(response)
 
         response_time = time.time() - start_time  # Calculate response time
-        return {
-            "response": complete_sentence.encode("utf-8").decode("latin-1"),
-            "response_time": response_time,
-        }
+        return {"response": complete_sentence, "response_time": response_time}
 
     except Exception as e:
         response_time = (
@@ -106,10 +103,7 @@ async def chaturl(user_question: UserQuestion, url: str = None):
         complete_sentence = get_complete_sentence(response)
 
         response_time = time.time() - start_time  # Calculate response time
-        return {
-            "response": complete_sentence.encode("utf-8").decode("latin-1"),
-            "response_time": response_time,
-        }
+        return {"response": complete_sentence, "response_time": response_time}
 
     except Exception as e:
         response_time = (
