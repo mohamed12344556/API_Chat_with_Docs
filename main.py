@@ -10,14 +10,10 @@ from PyPDF2 import PdfReader
 from pydantic import BaseModel
 import io
 import time
+import shutil
+
 
 app = FastAPI()
-
-
-# Define request models
-class UserQuestion(BaseModel):
-    question: str
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,6 +22,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class UserQuestion(BaseModel):
+    question: str
+
+
+memory = ConversationBufferMemory()
 
 
 @app.get("/")
@@ -38,16 +41,40 @@ async def upload_pdf(file: UploadFile = File(...)):
     start_time = time.time()  # Start time
     contents = await file.read()
     pdf_bytes = io.BytesIO(contents)
-    response_time = time.time() - start_time  # Calculate response time
-    return {"pdf_bytes": pdf_bytes, "response_time": response_time}
+    if not contents:
+        raise HTTPException(
+            status_code=400, detail="Failed to load documents from the file."
+        )
+
+    # Ensure the "data" directory exists or create it if not
+    data_dir = "data"
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
+
+    # Save the uploaded file to "data" directory
+    file_path = os.path.join(data_dir, file.filename)
+    with open(file_path, "wb") as f:
+        f.write(contents)
+
+    response_time = time.time() - start_time
+    return {
+        "message": "PDF uploaded successfully",
+        "pdf_bytes": pdf_bytes,
+        "response_time": response_time,
+    }
 
 
 @app.post("/chatpdf/")
 async def process_user_question(user_question: UserQuestion):
-    start_time = time.time()  # Start time
+    start_time = time.time()
     try:
-        # Load documents
-        docs = get_text_from_pdf(upload_pdf())
+        # Load documents from the file
+        docs = load_documents_from_file(upload_pdf())
+
+        if not docs:
+            raise HTTPException(
+                status_code=400, detail="No documents loaded from file."
+            )
 
         # Specify chunk size and overlap
         chunk = get_text_chunks(docs)
@@ -56,89 +83,82 @@ async def process_user_question(user_question: UserQuestion):
         retriever = initialize_vector_database(chunk)
 
         # Generate RAG chain
-        rag_chain = generate_rag_chain(retriever, user_question.question)
+        rag_chain = generate_rag_chain(retriever, user_question.question, memory)
 
         # Invoke RAG chain
-        response = rag_chain.invoke(user_question.question)
+        response = ""
+        for token in rag_chain.stream(user_question.question):
+            response += token
 
         # Get complete sentence
         complete_sentence = get_complete_sentence(response)
 
-        response_time = time.time() - start_time  # Calculate response time
-        return {"response": complete_sentence, "response_time": response_time}
+        # Save the interaction in memory
+        memory.chat_memory.add_message({"role": "user", "content": user_question})
+        memory.chat_memory.add_message(
+            {"role": "assistant", "content": complete_sentence}
+        )
 
+        response_time = time.time() - start_time
+        return {"response": complete_sentence, "response_time": response_time}
     except Exception as e:
-        response_time = (
-            time.time() - start_time
-        )  # Calculate response time even on error
+        response_time = time.time() - start_time
         raise HTTPException(
             status_code=500, detail={"error": str(e), "response_time": response_time}
         )
 
 
 @app.post("/chaturl/")
-async def chaturl(user_question: UserQuestion, url: str = None):
-    start_time = time.time()  # Start time
+async def chaturl(user_question: UserQuestion, url: str):
+    start_time = time.time()
     try:
-        if user_question is None or url is None:
+        if not user_question or not url:
             raise HTTPException(
                 status_code=400, detail="Both user_question and url are required."
             )
+
         # Get text from the URL
-        url_text = get_text_from_url(url)
+        docs = load_documents_from_url(url)
+        if not docs:
+            raise HTTPException(
+                status_code=400, detail="Failed to load documents from the URL."
+            )
 
         # Specify chunk size and overlap
-        text_chunks = get_text_chunks(url_text)
+        text_chunks = get_text_chunks(docs)
 
         # Initialize Vector Database
         retriever = initialize_vector_database(text_chunks)
 
         # Generate RAG chain
-        rag_chain = generate_rag_chain(retriever, user_question.question)
+        rag_chain = generate_rag_chain(retriever, user_question.question, memory)
 
         # Invoke RAG chain
-        response = rag_chain.invoke(user_question.question)
+        response = ""
+        for token in rag_chain.stream(user_question.question):
+            response += token
 
         # Get complete sentence
         complete_sentence = get_complete_sentence(response)
+        # Save the interaction in memory
+        memory.chat_memory.add_message({"role": "user", "content": user_question})
+        memory.chat_memory.add_message(
+            {"role": "assistant", "content": complete_sentence}
+        )
 
-        response_time = time.time() - start_time  # Calculate response time
+        response_time = time.time() - start_time
         return {"response": complete_sentence, "response_time": response_time}
-
     except Exception as e:
-        response_time = (
-            time.time() - start_time
-        )  # Calculate response time even on error
+        response_time = time.time() - start_time
         raise HTTPException(
             status_code=500, detail={"error": str(e), "response_time": response_time}
         )
 
 
-# @app.post("/chatpdf/")
-# async def chatpdf(file: UploadFile = File(...), user_question: str = None):
-#     # Check if file exists
-#     if not file:
-#         raise HTTPException(status_code=400, detail="No file uploaded")
-
-#     # Check if the uploaded file is a PDF
-#     if not file.filename.lower().endswith(".pdf"):
-#         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
-
-#     try:
-#         # Save the uploaded file temporarily
-#         with open("temp.pdf", "wb") as f:
-#             raw_text = get_text_from_pdf(f.write(file.file.read()))
-
-#         # Process text chunks and conversation chain
-#         text_chunks = get_text_chunks(raw_text)
-#         retriever = initialize_vector_database(text_chunks)
-#         rag_chain = generate_rag_chain(retriever, user_question)
-#         response = rag_chain.invoke(user_question)
-#         complete_sentence = get_complete_sentence(response)
-
-#         return complete_sentence
-
-#     finally:
-#         # Delete the temporary file
-#         if os.path.exists("temp.pdf"):
-#             os.remove("temp.pdf")
+# @app.get("/chathistory/")
+# async def get_chat_history():
+#     chat_history = [
+#         {"role": message["role"], "content": message["content"]}
+#         for message in memory.chat_memory.messages
+#     ]
+#     return {"chat_history": chat_history}
